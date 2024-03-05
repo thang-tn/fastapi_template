@@ -1,18 +1,28 @@
-import contextlib  # noqa: D100
+"""Database Session Manager."""
+
+import contextlib
 from collections.abc import AsyncIterator
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncConnection,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
-from app.config import get_settings
+from app.core.config import DatabaseSettings, get_settings
 
 
 class DatabaseSessionManager:
     """Database Session Manager class."""
 
-    def __init__(self, db_host: str, kwargs: dict[str, Any]) -> None:  # noqa: RUF100
+    def __init__(self, db_host: str, kwargs: dict[str, Any]) -> None:
         extra_kwargs = kwargs if kwargs else {}
-        self._engine = create_async_engine(db_host, **extra_kwargs)
+        self._engine = create_async_engine(
+            db_host,
+            **extra_kwargs,
+        )
         self._sessionmaker = async_sessionmaker(
             autocommit=False,
             bind=self._engine,
@@ -21,11 +31,15 @@ class DatabaseSessionManager:
     def _validate_engine(self):
         """Ensuse `self._engine` is not None."""
         if self._engine is None:
-            raise Exception("DatabaseSessionManager is not initialized.")  # noqa: TRY002
+            raise RuntimeError(
+                "DatabaseSessionManager is not initialized.",
+            )
 
     async def close(self):
         """Close database connection."""
-        self._validate_engine()
+        if self._engine is None:
+            return
+
         await self._engine.dispose()
 
         self._engine = None
@@ -44,7 +58,7 @@ class DatabaseSessionManager:
                 raise
 
     @contextlib.asynccontextmanager  # type: ignore[arg-type]
-    async def session(self) -> AsyncIterator[AsyncSession]:
+    async def session(self, *, scoped: bool = False) -> AsyncIterator[AsyncSession]:
         """Get async database session."""
         self._validate_engine()
 
@@ -57,26 +71,21 @@ class DatabaseSessionManager:
             raise
         finally:
             await session.close()
+            if scoped:
+                await self._engine.dispose()
 
 
 # initialize session manager from app settings
-settings = get_settings()
+db_settings: DatabaseSettings = get_settings("database")
 session_manager = DatabaseSessionManager(
-    settings.database.db_uri,  # type: ignore[attr-defined]
+    db_settings.db_uri,  # type: ignore[attr-defined]
     {
-        "echo": settings.database.echo_sql,  # type: ignore[attr-defined]
+        "echo": db_settings.echo_sql,  # type: ignore[attr-defined]
+        "connect_args": {
+            "server_settings": {
+                "lock_timeout": str(db_settings.lock_timeout),
+                "statement_timeout": str(db_settings.statement_timeout),
+            },
+        },
     },
 )
-
-
-async def get_db_session() -> AsyncIterator[AsyncSession]:
-    """
-    Return current database session.
-
-    Yields
-    ------
-    AsyncIterator[AsyncSession]
-        Async database connection
-    """
-    async with session_manager.session() as session:
-        yield session

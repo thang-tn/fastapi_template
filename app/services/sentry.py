@@ -5,19 +5,20 @@ import types
 import sentry_sdk
 from sentry_sdk.scrubber import DEFAULT_DENYLIST, EventScrubber
 
-from app.config.sentry import sentry_settings
+from app.core.config import SentrySettings, get_settings
 
 DENY_LIST = [
     *DEFAULT_DENYLIST,
     "document_html",
     "document_url",
 ]
+sentry_settings: SentrySettings = get_settings("sentry")
 
 
 class SentryService:
     """Sentry service for handling and reporting errors."""
 
-    _instance = None
+    _instance: object = None
 
     def __new__(cls):
         """Create instance for service."""

@@ -1,29 +1,35 @@
-# Use the specified Python base image
-FROM python:3.11-slim-bullseye
+# Build Base python image
+FROM python:3.11-slim-bullseye as base
 
 # Set environment variables
-# Keeps Python from generating .pyc files in the container
-ENV PYTHONDONTWRITEBYTECODE 1
-# Turns off buffering for easier container logging
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_INSTALLER_PARALLEL=1 \
+    POETRY_INSTALLER_MAX_WORKER=10
+ENV PATH="$POETRY_HOME/bin:$PATH"
 
 # Install system dependencies
 RUN apt-get update \
-    && apt-get install -y postgresql-client vim curl python3-opencv poppler-utils libreoffice build-essential
+    && apt-get install -y build-essential curl libpq-dev vim
 
-RUN apt install libpq-dev
-RUN apt-get autoremove -y && apt-get clean
+# Install poetry
+# RUN curl -sSL https://install.python-poetry.org | python -
 RUN pip install poetry
-# Set the work directory in docker and copy project to work directory
-WORKDIR /fastapi-app
 
-# Copy the content of the local src directory to the working directory
-COPY pyproject.toml poetry.lock* /fastapi-app/
+# Copy poetry file
+COPY ./poetry.lock ./pyproject.toml /tmp
 
-# RUN poetry config installer.max-workers 10
-# Install project dependencies
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
+# Install python dependencies
+RUN cd /tmp && poetry install --no-dev --no-root
 
-# Copy the content of the local src directory to the working directory
-COPY . /fastapi-app/
+# build app image
+FROM base as final
+
+# Create app dir
+WORKDIR /project
+
+# Copy project files
+COPY . /project/

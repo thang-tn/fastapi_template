@@ -1,0 +1,42 @@
+# exlude from formatting and linting
+extend-exclude = ["alembic", "scripts"]
+# automatic fix
+fix = true
+# line-length
+line-length = 119
+# Always generate Python 3.11-compatible code.
+target-version = "py311"
+
+[lint]
+extend-select = ["ALL"]
+ignore = [
+    "ANN",
+    "A002",    # Argument {name} is shadowing a Python builtin
+    "D104",    # Missing docstring in public package
+    "EM101",   # Exception must not use a string literal, assign to variable first
+    "EM102",   # Exception must not use an f-string literal, assign to variable first
+    "FIX002",  # Consider resolving TODO
+    "PLR0913", # Too many arguments to function call ({c_args} > {max_args})
+    "TD003",   # Missing issue link on the line following TODO
+    "TRY003",  # Avoid specifying long messages outside the exception class
+]
+
+[lint.mccabe]
+max-complexity = 10
+
+[lint.per-file-ignores]
+# ignore linting for __init__.py
+# E402: module-import-not-at-top-of-file
+# F401: unused import
+"__init__.py" = ["E402", "F401"]
+# ignore assert check in test files
+# S101: use of assert detected
+# SLF001: private member accessed
+"tests/*" = ["S101", "SLF001"]
+
+[lint.pydocstyle]
+convention = "numpy"
+
+[lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true

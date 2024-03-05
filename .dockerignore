@@ -1,0 +1,30 @@
+# Byte-compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+
+# Notebooks
+notebooks/
+
+# Documents
+data/documents/
+
+# Version control directories
+.git/
+.gitignore
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+.ruff_cache
+.mypy_cache
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

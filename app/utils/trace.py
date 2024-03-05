@@ -1,8 +1,9 @@
 """Helper for ddtrace."""
+import structlog
 from ddtrace import patch
+from ddtrace.contrib.asgi.middleware import TraceMiddleware
 from ddtrace.profiling import Profiler
-
-from app.config import get_settings
+from fastapi import FastAPI
 
 
 def start_profiler():
@@ -11,10 +12,9 @@ def start_profiler():
     prof.start()
 
 
-def enable_trace() -> bool:
+def enable_trace(environment: str) -> bool:
     """Enable trace when environment is not development."""
-    settings = get_settings("consumer")
-    return settings.environment.lower() in ("stg", "prd")  # type: ignore[attr-defined]
+    return environment.lower() in ("staging", "production")
 
 
 def path_trace():
@@ -60,3 +60,15 @@ def path_kafka_trace():
         urllib3=True,
         kombu=True,
     )
+
+
+def patch_tracing_middleware(app: FastAPI):
+    """Patch Datadog middleware."""
+    tracing_middleware = next((m for m in app.user_middleware if m.cls == TraceMiddleware), None)
+    if tracing_middleware is not None:
+        app.user_middleware = [m for m in app.user_middleware if m.cls != TraceMiddleware]
+        structlog.stdlib.get_logger("api.datadog_patch").info(
+            "Patching Datadog tracing middleware to be the outermost middleware...",
+        )
+        app.user_middleware.insert(0, tracing_middleware)
+        app.middleware_stack = app.build_middleware_stack()

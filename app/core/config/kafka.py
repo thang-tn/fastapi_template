@@ -16,6 +16,7 @@ class KafkaSettings(BaseSettings):
     auto_commit_interval_ms: str = "1000"
     max_poll_records: str = "100"
     session_time_out_ms: str = "600000"
+    dd_service: str = ""
 
     @property
     def bootstrap_servers(self) -> list[str]:

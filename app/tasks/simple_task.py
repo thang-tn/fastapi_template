@@ -12,4 +12,4 @@ logger.setLevel(logging.DEBUG)
 @shared_task(queue=CELERY_QUEUE)
 def simple_task(data):
     """Return Simple task."""
-    logger.debug(f"Receiving data: {data}")
+    logger.debug("Receiving data: %s", data)

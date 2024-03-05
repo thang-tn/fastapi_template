@@ -1,18 +1,20 @@
-import logging  # noqa: D100
-import sys
+"""Main file for starting the web app."""
+import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from asgi_correlation_id import CorrelationIdMiddleware
+from fastapi import FastAPI, HTTPException
+from fastapi.exception_handlers import http_exception_handler
 
 from app.api import app_router
-from app.config import get_settings
-from app.db import session_manager
+from app.core.config import AppSettings, get_settings
+from app.core.db import session_manager
+from app.utils.middlewares.http_middleware import LoggingMiddleware
+from app.utils.structlog import configure_logging
+from app.utils.trace import patch_tracing_middleware
 
-settings = get_settings()
-logging.basicConfig(
-    stream=sys.stdout,
-    level=logging.DEBUG if settings.debug else logging.INFO,  # type: ignore[attr-defined]
-)
+logger = logging.getLogger(__name__)
+settings: AppSettings = get_settings()
 
 
 @asynccontextmanager
@@ -25,10 +27,12 @@ async def lifespan(_: FastAPI):
     app : FastAPI
         App instance
     """
+    # configure logging for web app
+    configure_logging(debug=settings.debug, enable_json=settings.json_log_enabled)
+
     yield
-    if session_manager._engine is not None:  # noqa: SLF001
-        # close the db connection at startup and shutdown
-        await session_manager.close()
+    # close the db connection at startup and shutdown
+    await session_manager.close()
 
 
 app = FastAPI(
@@ -36,4 +40,17 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/api/docs",
 )
+# register middlewares
+app.add_middleware(LoggingMiddleware, logger=logger)
+app.add_middleware(CorrelationIdMiddleware)
+patch_tracing_middleware(app)
+# register routers
 app.include_router(app_router)
+
+
+# adding logging for exception handler
+@app.exception_handler(HTTPException)
+async def http_exception_handle_logging(request, exc):
+    """Handle web app exceptions."""
+    logger.error("HTTPException: %s %s", exc.status_code, exc.detail)
+    return await http_exception_handler(request, exc)
