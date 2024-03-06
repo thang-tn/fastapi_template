@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "fastapi-app"
+name = "{{ cookiecutter.project_name }}"
 version = "0.1.0"
-description = ""
+description = "{{ cookiecutter.description }}"
 authors = ["Thang Tong <Thang.TongNhu@employmenthero.com>"]
 readme = "README.md"
 

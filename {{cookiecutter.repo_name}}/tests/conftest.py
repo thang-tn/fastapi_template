@@ -1,7 +1,7 @@
 """Test Setups."""
 import asyncio
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
@@ -26,7 +26,7 @@ async def _setup_test_db():
 
 
 @pytest.fixture(scope="session")
-async def async_client() -> AsyncGenerator[AsyncClient]:
+async def async_client() -> AsyncIterator[AsyncClient]:
     """Async Test client."""
     async with AsyncClient(app=main_app, base_url="http://test") as client:
         yield client
@@ -48,7 +48,7 @@ def event_loop() -> Any:
 # FUNCTION FIXTURES
 ##################
 @pytest.fixture()
-async def async_session() -> AsyncGenerator[AsyncSession]:
+async def async_session() -> AsyncIterator[AsyncSession]:
     """Get async database session."""
     async with test_session_manager.session(scoped=True) as session:
         yield session
