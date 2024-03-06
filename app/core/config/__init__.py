@@ -1,11 +1,15 @@
 from functools import lru_cache
 from typing import Any
 
+from dotenv import load_dotenv
+
 from app.core.config.application import AppSettings
 from app.core.config.celery import CelerySettings
 from app.core.config.database import DatabaseSettings
 from app.core.config.kafka import KafkaSettings
 from app.core.config.sentry import SentrySettings
+
+load_dotenv()
 
 
 @lru_cache

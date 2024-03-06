@@ -17,9 +17,9 @@ def enable_trace(environment: str) -> bool:
     return environment.lower() in ("staging", "production")
 
 
-def path_trace():
+def path_trace(environment: str = "development"):
     """Patch trace extensions."""
-    if enable_trace() is False:
+    if enable_trace(environment) is False:
         return
 
     patch(
@@ -42,9 +42,9 @@ def path_trace():
     start_profiler()
 
 
-def path_kafka_trace():
+def path_kafka_trace(environment: str = "development"):
     """Patch trace extensions."""
-    if enable_trace() is False:
+    if enable_trace(environment) is False:
         return
 
     patch(

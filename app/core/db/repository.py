@@ -3,6 +3,7 @@
 import abc
 from typing import Any
 
+from sqlalchemy import BinaryExpression, ColumnExpressionArgument, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import BaseModel
@@ -42,16 +43,6 @@ class AbstractRepository(abc.ABC):
         Any
             newly created record
 
-        """
-        raise NotImplementedError
-
-    def filter_by(self, **kwargs) -> list[Any]:
-        """Filter by conditions.
-
-        Returns
-        -------
-        list[Any]
-            found records.
         """
         raise NotImplementedError
 
@@ -99,3 +90,26 @@ class AbstractSqlRepository(AbstractRepository):
         await self.session.commit()
         await self.session.refresh(instance)
         return instance
+
+    async def filter_by(
+        self,
+        *expressions: BinaryExpression | ColumnExpressionArgument,
+        limit: int = 100,
+        skip: int = 0,
+    ) -> list[Any]:
+        """
+        Filter records by conditions.
+
+        Returns
+        -------
+        list
+            list of records retrieved
+        """
+        query = select(self.model)
+        if expressions:
+            query = query.where(*expressions)
+
+        if skip:
+            query = query.offset(skip)
+
+        return list(await self.session.execute(query.limit(limit)))

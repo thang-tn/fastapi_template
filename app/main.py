@@ -1,7 +1,7 @@
 """Main file for starting the web app."""
-import logging
 from contextlib import asynccontextmanager
 
+import structlog
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI, HTTPException
 from fastapi.exception_handlers import http_exception_handler
@@ -13,7 +13,9 @@ from app.utils.middlewares.http_middleware import LoggingMiddleware
 from app.utils.structlog import configure_logging
 from app.utils.trace import patch_tracing_middleware
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger(__name__)
+
 settings: AppSettings = get_settings()
 
 
@@ -36,7 +38,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="SmartMatch",
+    title="FastAPI Project",
     lifespan=lifespan,
     docs_url="/api/docs",
 )

@@ -1,4 +1,5 @@
-from pydantic_settings import BaseSettings  # noqa: D100
+"""Celery configurations."""
+from pydantic_settings import BaseSettings
 
 
 class CelerySettings(BaseSettings):

@@ -46,6 +46,15 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: fastapi
 
+  postgres-test:
+    image: postgres:16
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test
+
   redis:
     image: redis
     ports:
@@ -61,6 +70,8 @@ services:
       - "8000:8000"
     depends_on:
       - postgres
+    volumes:
+      - .:/project
     environment:
       CELERY_BROKER_URL: "redis://redis:6379"
       CELERY_RESULT_BACKEND: "redis://redis:6379"
@@ -78,6 +89,7 @@ services:
       CELERY_RESULT_BACKEND: "redis://redis:6379"
       KAFKA_BROKERS_TLS: kafka:9092
       KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+      JSON_LOG_ENABLED: false
 
   celery:
     image: fastapi-app:latest
@@ -90,5 +102,4 @@ services:
       CELERY_BROKER_URL: "redis://redis:6379"
       CELERY_RESULT_BACKEND: "redis://redis:6379"
       DATABASE_URL: postgresql+asyncpg://postgres:password@postgres:5432/fastapi
-      KAFKA_BROKERS_TLS: kafka:9092
-      KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+      JSON_LOG_ENABLED: false

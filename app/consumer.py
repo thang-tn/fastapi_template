@@ -1,8 +1,9 @@
 """Consumer kafka command."""
 import asyncio
+import logging
+import os
 import signal
 
-import structlog
 from ddtrace import tracer
 
 from app.core.config import KafkaSettings, get_settings
@@ -11,14 +12,14 @@ from app.utils.sentry import capture_exception
 from app.utils.structlog import configure_logging
 from app.utils.trace import path_kafka_trace
 
-settings: KafkaSettings = get_settings("consumer")
-logger = structlog.stdlib.get_logger("aiokafka.consumer.group_coordinator")
+settings: KafkaSettings = get_settings("kafka")
+logger = logging.getLogger("aiokafka.consumer.group_coordinator")
 
 
 async def main() -> None:
     """Kafka service."""
     with tracer.trace("kafka.consume", service=settings.dd_service):
-        path_kafka_trace()
+        path_kafka_trace(settings.environment)
         shutdown_event = asyncio.Event()
         kafka_service = KafkaService(kafka_settings=settings)
 
@@ -53,8 +54,12 @@ async def shutdown_signal_handler(shutdown_event):
 
 
 if __name__ == "__main__":
-    configure_logging(debug=False, enable_json=True)
+    configure_logging(
+        debug=False,
+        enable_json=os.getenv("JSON_LOG_ENABLED", "0").lower() not in ("false", "0"),
+    )
     try:
         asyncio.run(main())
-    except Exception as ex:  # noqa:  BLE001
+    except Exception as ex:
+        logger.exception("Failed to start consumer")
         capture_exception(ex)

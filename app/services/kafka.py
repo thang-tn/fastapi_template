@@ -12,7 +12,7 @@ from celery import Task
 from sentry_sdk import capture_exception
 
 from app.core.config.kafka import KafkaSettings
-from app.tasks import simple_task
+from app.tasks.simple_task import simple_task
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -50,10 +50,10 @@ class KafkaService:
         return {
             "bootstrap_servers": self.settings.bootstrap_servers,
             "ssl_context": create_ssl_context(),
-            "security_protocol": self.settings.security_protocol,
-            "sasl_plain_username": self.settings.username,
-            "sasl_plain_password": self.settings.password,
-            "sasl_mechanism": self.settings.mechanism,
+            "security_protocol": self.settings.kafka_security_protocol,
+            "sasl_plain_username": self.settings.kafka_username,
+            "sasl_plain_password": self.settings.kafka_password,
+            "sasl_mechanism": self.settings.kafka_mechanism,
         }
 
     @property
@@ -70,11 +70,11 @@ class KafkaService:
             return {}
 
         extra_configs = {
-            "group_id": self.settings.group_id,
-            "consumer_timeout_ms": int(self.settings.consumer_timeout),
-            "auto_commit_interval_ms": int(self.settings.auto_commit_interval_ms),
-            "max_poll_records": int(self.settings.max_poll_records),
-            "session_timeout_ms": int(self.settings.session_time_out_ms),
+            "group_id": self.settings.kafka_group_id,
+            "consumer_timeout_ms": int(self.settings.kafka_consumer_timeout),
+            "auto_commit_interval_ms": int(self.settings.kafka_auto_commit_interval_ms),
+            "max_poll_records": int(self.settings.kafka_max_poll_records),
+            "session_timeout_ms": int(self.settings.kafka_session_time_out_ms),
         }
 
         return {
