@@ -2,5 +2,6 @@
     "repo_name": "fastapi-boilerplate",
     "project_name": "fastapi_app",
     "description": "FastAPI project template",
+    "author": "",
     "version": "0.1.0"
 }
